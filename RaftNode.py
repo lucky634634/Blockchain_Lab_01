@@ -167,7 +167,8 @@ def serve(node_id, peers, port):
 
 if __name__ == "__main__":
     import sys
+
     node_id = int(sys.argv[1])
     port = 50050 + node_id
-    peers = [f"localhost:{50050 + i}" for i in range(3) if i != node_id]
+    peers = [f"localhost:{50050 + i}" for i in range(5) if i != node_id]
     serve(node_id, peers, port)
