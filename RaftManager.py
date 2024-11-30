@@ -14,19 +14,19 @@ class RaftManager:
         self.node_processes = {}
         self.node_id_counter = 0
 
-        self.setup()
+        self.Setup()
 
-    def add_node(self):
+    def AddNode(self):
         node_id = self.node_id_counter
         self.node_id_counter += 1
         self.node_list.insert(tk.END, f"Node {node_id}")
         print(f"Node {node_id} added")
         pass
 
-    def remove_node(self):
+    def RemoveNode(self):
         pass
 
-    def setup(self):
+    def Setup(self):
         self.root.geometry("800x600")
 
         self.root.frame = tk.Frame(self.root)
@@ -35,12 +35,12 @@ class RaftManager:
         self.node_list.pack(pady=10)
 
         self.add_node_button = tk.Button(
-            self.root.frame, text="Add Node", command=self.add_node
+            self.root.frame, text="Add Node", command=self.AddNode
         )
         self.add_node_button.pack(pady=10)
 
         self.remove_node_button = tk.Button(
-            self.root.frame, text="Remove Node", command=self.remove_node
+            self.root.frame, text="Remove Node", command=self.RemoveNode
         )
         self.remove_node_button.pack(pady=10)
 
@@ -50,10 +50,10 @@ class RaftManager:
     def SetState(self, node_id, state):
         pass
 
-    def run(self):
+    def Run(self):
         self.root.mainloop()
 
 
 if __name__ == "__main__":
     manager = RaftManager()
-    manager.run()
+    manager.Run()

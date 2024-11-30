@@ -7,6 +7,8 @@ service Raft {
   rpc GetActive(GetActiveRequest) returns (GetActiveResponse);
   rpc AddPeer(AddPeerRequest) returns (AddPeerResponse);
   rpc RemovePeer(RemovePeerRequest) returns (RemovePeerResponse);
+  rpc GetPeers(GetPeersRequest) returns (GetPeersResponse);
+  rpc GetNodeId(GetNodeIdRequest) returns (GetNodeIdResponse);
 }
 
 message RequestVoteRequest {
@@ -58,3 +60,11 @@ message AddPeerResponse { bool success = 1; }
 message RemovePeerRequest { int32 peerId = 1; }
 
 message RemovePeerResponse { bool success = 1; }
+
+message GetPeersRequest {}
+
+message GetPeersResponse { repeated int32 peers = 1; }
+
+message GetNodeIdRequest {}
+
+message GetNodeIdResponse { int32 nodeId = 1; }
