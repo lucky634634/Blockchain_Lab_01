@@ -10,7 +10,7 @@ class RaftNode(raft_pb2_grpc.RaftServicer):
     def __init__(self, node_id, peers):
         self.node_id = node_id
         self.peers = peers
-
+        self.isActive = True
         # Node states
         self.state = "follower"
         self.current_term = 0
@@ -120,6 +120,9 @@ class RaftNode(raft_pb2_grpc.RaftServicer):
     def run(self):
         try:
             while True:
+                if self.isActive == False:
+                    time.sleep(0.1)
+                    continue
                 time.sleep(0.1)
                 if (
                     self.state == "follower"
@@ -153,6 +156,13 @@ class RaftNode(raft_pb2_grpc.RaftServicer):
                     print(
                         f"Leader Node {self.node_id} failed to send heartbeat to Node {peer.split(':')[1]}"
                     )
+
+    def SetActive(self, request, context):
+        self.isActive = request.active
+        return raft_pb2.SetActiveResponse(success=True)
+
+    def GetActive(self, request, context):
+        return raft_pb2.SetActiveResponse(active=self.isActive)
 
 
 def serve(node_id, peers, port):

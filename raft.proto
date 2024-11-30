@@ -3,6 +3,10 @@ syntax = "proto3";
 service Raft {
   rpc RequestVote(RequestVoteRequest) returns (RequestVoteResponse);
   rpc AppendEntries(AppendEntriesRequest) returns (AppendEntriesResponse);
+  rpc SetActive(SetActiveRequest) returns (SetActiveResponse);
+  rpc GetActive(GetActiveRequest) returns (GetActiveResponse);
+  rpc AddPeer(AddPeerRequest) returns (AddPeerResponse);
+  rpc RemovePeer(RemovePeerRequest) returns (RemovePeerResponse);
 }
 
 message RequestVoteRequest {
@@ -35,3 +39,22 @@ message LogEntry {
   int32 term = 1;
   string command = 2;
 }
+
+message SetActiveRequest { bool active = 1; }
+
+message SetActiveResponse { bool success = 1; }
+
+message GetActiveRequest {}
+
+message GetActiveResponse { bool active = 1; }
+
+message AddPeerRequest {
+  int32 peerId = 1;
+  int32 port = 2;
+}
+
+message AddPeerResponse { bool success = 1; }
+
+message RemovePeerRequest { int32 peerId = 1; }
+
+message RemovePeerResponse { bool success = 1; }
