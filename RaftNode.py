@@ -5,6 +5,7 @@ import random
 import raft_pb2
 import raft_pb2_grpc
 
+MANAGER_PORT = 50000
 
 class RaftNode(raft_pb2_grpc.RaftServicer):
     def __init__(self, node_id, port):
@@ -178,6 +179,9 @@ class RaftNode(raft_pb2_grpc.RaftServicer):
 
     def GetNodeId(self, request, context):
         return raft_pb2.GetNodeIdResponse(nodeId=self.node_id)
+
+    def GetState(self, request, context):
+        return raft_pb2.GetRoleResponse(role=self.state)
 
     def Serve(self):
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

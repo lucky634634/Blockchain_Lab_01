@@ -3,10 +3,32 @@ from tkinter import messagebox
 import subprocess
 import threading
 
+import grpc
+import RaftManager_pb2
+import RaftManager_pb2_grpc
+from concurrent import futures
+
 PORT = 50000
 
 
-class RaftManager:
+class NodeWindow:
+    def __init__(self, manager, node_id):
+        self.parent = manager
+        self.node_id = node_id
+        self.Setup()
+
+    def Setup(self):
+        self.parent = manager.root
+        self.root = tk.Toplevel(self.parent)
+        self.root.title(f"Node {self.node_id}")
+        self.root.geometry("800x600")
+        self.frame = tk.Frame(self.root)
+        self.frame.pack()
+        self.listBox = tk.Listbox(self.frame, width=100, height=10)
+        self.listBox.pack()
+
+
+class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Raft Manager")
@@ -17,6 +39,9 @@ class RaftManager:
         self.Setup()
 
     def AddNode(self):
+        if len(self.nodes) >= 10:
+            messagebox.showinfo("Error", "Cannot add more than 10 nodes")
+            return
         node_id = self.node_id_counter
         self.node_id_counter += 1
         self.node_list.insert(tk.END, f"Node {node_id}")
@@ -24,7 +49,6 @@ class RaftManager:
         self.node_processes[node_id] = subprocess.Popen(
             ["python", "RaftNode.py", str(node_id)]
         )
-        pass
 
     def RemoveNode(self):
         if self.node_list.curselection():
@@ -40,10 +64,7 @@ class RaftManager:
         if self.node_list.curselection():
             node_id = self.node_list.curselection()[0]
             print(f"Viewing Node {node_id}")
-            self.child_windows[node_id] = tk.Toplevel(self.root)
-            self.child_windows[node_id].title(f"Node {node_id}")
-            self.child_windows[node_id].geometry("800x600")
-            self.child_windows[node_id].frame = tk.Frame(self.child_windows[node_id])
+            self.child_windows[node_id] = NodeWindow(self.root, node_id)
 
     def Setup(self):
         self.root.geometry("800x600")
@@ -74,7 +95,20 @@ class RaftManager:
     def SetState(self, node_id, state):
         pass
 
+    def GetPeers(self, node_id):
+        pass
+
+    def AddPeer(self, node_id, peer):
+        pass
+
+    def RemovePeer(self, node_id, peer):
+        pass
+
     def Run(self):
+        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        RaftManager_pb2_grpc.add_RaftManagerServicer_to_server(self, server)
+        server.add_insecure_port(f"[::]:{PORT}")
+        server.start()
         self.root.mainloop()
 
 

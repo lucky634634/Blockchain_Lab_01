@@ -9,6 +9,7 @@ service Raft {
   rpc RemovePeer(RemovePeerRequest) returns (RemovePeerResponse);
   rpc GetPeers(GetPeersRequest) returns (GetPeersResponse);
   rpc GetNodeId(GetNodeIdRequest) returns (GetNodeIdResponse);
+  rpc GetState(GetStateRequest) returns (GetStateResponse);
 }
 
 message RequestVoteRequest {
@@ -68,3 +69,7 @@ message GetPeersResponse { repeated int32 peers = 1; }
 message GetNodeIdRequest {}
 
 message GetNodeIdResponse { int32 nodeId = 1; }
+
+message GetStateRequest {}
+
+message GetStateResponse { string role = 1; }
