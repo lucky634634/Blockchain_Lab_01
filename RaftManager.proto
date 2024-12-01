@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+service RaftManager {
+  rpc SendRole(SendRoleRequest) returns (SendRoleResponse);
+}
+
+message SendRoleRequest {
+  int32 nodeId = 1;
+  string role = 2;
+}
+
+message SendRoleResponse { bool success = 1; }

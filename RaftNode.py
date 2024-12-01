@@ -5,11 +5,18 @@ import random
 import raft_pb2
 import raft_pb2_grpc
 
+import RaftManager_pb2
+import RaftManager_pb2_grpc
+
+MANAGER_PORT = 50000
+
 
 class RaftNode(raft_pb2_grpc.RaftServicer):
-    def __init__(self, node_id, peers):
+    def __init__(self, node_id, port):
         self.node_id = node_id
-        self.peers = peers
+        self.port = port
+        self.isActive = True
+        self.peers = []
 
         # Node states
         self.state = "follower"
@@ -93,8 +100,7 @@ class RaftNode(raft_pb2_grpc.RaftServicer):
         print(f"Node {self.node_id} starting election for term {self.current_term}")
 
         for peer in self.peers:
-            print(f"Node {self.node_id} connecting to Node {peer}")
-            with grpc.insecure_channel(peer) as channel:
+            with grpc.insecure_channel(f"localhost:{peer}") as channel:
                 stub = raft_pb2_grpc.RaftStub(channel)
                 try:
                     response = stub.RequestVote(
@@ -108,18 +114,26 @@ class RaftNode(raft_pb2_grpc.RaftServicer):
                     if response.voteGranted:
                         votes += 1
                         print(
-                            f"Node {self.node_id} received vote from Node {peer.split(':')[1]}"
+                            f"Node {self.node_id} received vote from Node {peer - 50050}"
                         )
                 except grpc.RpcError:
-                    print(f"Node {self.node_id} failed to connect to Node {peer}")
+                    print(
+                        f"Node {self.node_id} failed to connect to Node {peer - 50050}"
+                    )
+                    self.peers.remove(peer)
 
         if votes > len(self.peers) // 2:
             self.state = "leader"
             print(f"Node {self.node_id} became the leader for term {self.current_term}")
 
+        self.SendRoleToManager()
+
     def run(self):
         try:
             while True:
+                if self.isActive == False:
+                    time.sleep(0.1)
+                    continue
                 time.sleep(0.1)
                 if (
                     self.state == "follower"
@@ -132,11 +146,9 @@ class RaftNode(raft_pb2_grpc.RaftServicer):
             pass
 
     def send_heartbeats(self):
+        print(f"Leader Node {self.node_id} sending heartbeats")
         for peer in self.peers:
-            print(
-                f"Leader Node {self.node_id} sending heartbeat to Node {peer.split(':')[1]}"
-            )
-            with grpc.insecure_channel(peer) as channel:
+            with grpc.insecure_channel(f"localhost:{peer}") as channel:
                 stub = raft_pb2_grpc.RaftStub(channel)
                 try:
                     stub.AppendEntries(
@@ -151,23 +163,61 @@ class RaftNode(raft_pb2_grpc.RaftServicer):
                     )
                 except grpc.RpcError:
                     print(
-                        f"Leader Node {self.node_id} failed to send heartbeat to Node {peer.split(':')[1]}"
+                        f"Leader Node {self.node_id} failed to send heartbeat to Node {peer - 50050}"
                     )
 
+    def SetActive(self, request, context):
+        self.isActive = request.active
+        return raft_pb2.SetActiveResponse(success=True)
 
-def serve(node_id, peers, port):
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    node = RaftNode(node_id, peers)
-    raft_pb2_grpc.add_RaftServicer_to_server(node, server)
-    server.add_insecure_port(f"[::]:{port}")
-    server.start()
-    print(f"Node {node_id} running on port {port}")
-    node.run()
+    def GetActive(self, request, context):
+        return raft_pb2.SetActiveResponse(active=self.isActive)
+
+    def AddPeer(self, request, context):
+        if request.port in self.peers:
+            return raft_pb2.AddPeerResponse(success=False)
+        self.peers.append(request.port)
+        print(f"Node {self.node_id} added peer {request.port}")
+        return raft_pb2.AddPeerResponse(success=True)
+
+    def RemovePeer(self, request, context):
+        self.peers.remove(request.port)
+        return raft_pb2.RemovePeerResponse(success=True)
+
+    def GetPeers(self, request, context):
+        return raft_pb2.GetPeersResponse(peers=self.peers)
+
+    def GetNodeId(self, request, context):
+        return raft_pb2.GetNodeIdResponse(nodeId=self.node_id)
+
+    def GetState(self, request, context):
+        return raft_pb2.GetRoleResponse(role=self.state)
+
+    def SendRoleToManager(self):
+        with grpc.insecure_channel(f"localhost:{MANAGER_PORT}") as channel:
+            stub = RaftManager_pb2_grpc.RaftManagerStub(channel)
+            stub.SendRole(
+                RaftManager_pb2.SendRoleRequest(nodeId=self.node_id, role=self.state)
+            )
+
+        print(f"Node {self.node_id} sent role {self.state} to manager")
+
+    def Serve(self):
+        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        raft_pb2_grpc.add_RaftServicer_to_server(self, server)
+        server.add_insecure_port(f"[::]:{self.port}")
+        server.start()
+        print(f"Node {self.node_id} running on port {self.port}")
+        self.run()
 
 
 if __name__ == "__main__":
     import sys
+
+    if len(sys.argv) != 2:
+        print("Usage: python RaftNode.py <node_id>")
+        sys.exit(1)
     node_id = int(sys.argv[1])
     port = 50050 + node_id
-    peers = [f"localhost:{50050 + i}" for i in range(3) if i != node_id]
-    serve(node_id, peers, port)
+    node = RaftNode(node_id, port)
+    node.Serve()

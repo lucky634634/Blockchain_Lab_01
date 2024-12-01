@@ -44,6 +44,41 @@ class RaftStub(object):
                 request_serializer=raft__pb2.AppendEntriesRequest.SerializeToString,
                 response_deserializer=raft__pb2.AppendEntriesResponse.FromString,
                 _registered_method=True)
+        self.SetActive = channel.unary_unary(
+                '/Raft/SetActive',
+                request_serializer=raft__pb2.SetActiveRequest.SerializeToString,
+                response_deserializer=raft__pb2.SetActiveResponse.FromString,
+                _registered_method=True)
+        self.GetActive = channel.unary_unary(
+                '/Raft/GetActive',
+                request_serializer=raft__pb2.GetActiveRequest.SerializeToString,
+                response_deserializer=raft__pb2.GetActiveResponse.FromString,
+                _registered_method=True)
+        self.AddPeer = channel.unary_unary(
+                '/Raft/AddPeer',
+                request_serializer=raft__pb2.AddPeerRequest.SerializeToString,
+                response_deserializer=raft__pb2.AddPeerResponse.FromString,
+                _registered_method=True)
+        self.RemovePeer = channel.unary_unary(
+                '/Raft/RemovePeer',
+                request_serializer=raft__pb2.RemovePeerRequest.SerializeToString,
+                response_deserializer=raft__pb2.RemovePeerResponse.FromString,
+                _registered_method=True)
+        self.GetPeers = channel.unary_unary(
+                '/Raft/GetPeers',
+                request_serializer=raft__pb2.GetPeersRequest.SerializeToString,
+                response_deserializer=raft__pb2.GetPeersResponse.FromString,
+                _registered_method=True)
+        self.GetNodeId = channel.unary_unary(
+                '/Raft/GetNodeId',
+                request_serializer=raft__pb2.GetNodeIdRequest.SerializeToString,
+                response_deserializer=raft__pb2.GetNodeIdResponse.FromString,
+                _registered_method=True)
+        self.GetState = channel.unary_unary(
+                '/Raft/GetState',
+                request_serializer=raft__pb2.GetStateRequest.SerializeToString,
+                response_deserializer=raft__pb2.GetStateResponse.FromString,
+                _registered_method=True)
 
 
 class RaftServicer(object):
@@ -61,6 +96,48 @@ class RaftServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SetActive(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetActive(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def AddPeer(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def RemovePeer(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetPeers(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetNodeId(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetState(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_RaftServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -73,6 +150,41 @@ def add_RaftServicer_to_server(servicer, server):
                     servicer.AppendEntries,
                     request_deserializer=raft__pb2.AppendEntriesRequest.FromString,
                     response_serializer=raft__pb2.AppendEntriesResponse.SerializeToString,
+            ),
+            'SetActive': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetActive,
+                    request_deserializer=raft__pb2.SetActiveRequest.FromString,
+                    response_serializer=raft__pb2.SetActiveResponse.SerializeToString,
+            ),
+            'GetActive': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetActive,
+                    request_deserializer=raft__pb2.GetActiveRequest.FromString,
+                    response_serializer=raft__pb2.GetActiveResponse.SerializeToString,
+            ),
+            'AddPeer': grpc.unary_unary_rpc_method_handler(
+                    servicer.AddPeer,
+                    request_deserializer=raft__pb2.AddPeerRequest.FromString,
+                    response_serializer=raft__pb2.AddPeerResponse.SerializeToString,
+            ),
+            'RemovePeer': grpc.unary_unary_rpc_method_handler(
+                    servicer.RemovePeer,
+                    request_deserializer=raft__pb2.RemovePeerRequest.FromString,
+                    response_serializer=raft__pb2.RemovePeerResponse.SerializeToString,
+            ),
+            'GetPeers': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetPeers,
+                    request_deserializer=raft__pb2.GetPeersRequest.FromString,
+                    response_serializer=raft__pb2.GetPeersResponse.SerializeToString,
+            ),
+            'GetNodeId': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetNodeId,
+                    request_deserializer=raft__pb2.GetNodeIdRequest.FromString,
+                    response_serializer=raft__pb2.GetNodeIdResponse.SerializeToString,
+            ),
+            'GetState': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetState,
+                    request_deserializer=raft__pb2.GetStateRequest.FromString,
+                    response_serializer=raft__pb2.GetStateResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -129,6 +241,195 @@ class Raft(object):
             '/Raft/AppendEntries',
             raft__pb2.AppendEntriesRequest.SerializeToString,
             raft__pb2.AppendEntriesResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SetActive(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/Raft/SetActive',
+            raft__pb2.SetActiveRequest.SerializeToString,
+            raft__pb2.SetActiveResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetActive(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/Raft/GetActive',
+            raft__pb2.GetActiveRequest.SerializeToString,
+            raft__pb2.GetActiveResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def AddPeer(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/Raft/AddPeer',
+            raft__pb2.AddPeerRequest.SerializeToString,
+            raft__pb2.AddPeerResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def RemovePeer(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/Raft/RemovePeer',
+            raft__pb2.RemovePeerRequest.SerializeToString,
+            raft__pb2.RemovePeerResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetPeers(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/Raft/GetPeers',
+            raft__pb2.GetPeersRequest.SerializeToString,
+            raft__pb2.GetPeersResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetNodeId(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/Raft/GetNodeId',
+            raft__pb2.GetNodeIdRequest.SerializeToString,
+            raft__pb2.GetNodeIdResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetState(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/Raft/GetState',
+            raft__pb2.GetStateRequest.SerializeToString,
+            raft__pb2.GetStateResponse.FromString,
             options,
             channel_credentials,
             insecure,
