@@ -34,17 +34,17 @@ class RaftManagerStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.SendActive = channel.unary_unary(
-                '/RaftManager/SendActive',
-                request_serializer=RaftManager__pb2.SendActiveRequest.SerializeToString,
-                response_deserializer=RaftManager__pb2.SendActiveResponse.FromString,
+        self.SendRole = channel.unary_unary(
+                '/RaftManager/SendRole',
+                request_serializer=RaftManager__pb2.SendRoleRequest.SerializeToString,
+                response_deserializer=RaftManager__pb2.SendRoleResponse.FromString,
                 _registered_method=True)
 
 
 class RaftManagerServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def SendActive(self, request, context):
+    def SendRole(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -53,10 +53,10 @@ class RaftManagerServicer(object):
 
 def add_RaftManagerServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'SendActive': grpc.unary_unary_rpc_method_handler(
-                    servicer.SendActive,
-                    request_deserializer=RaftManager__pb2.SendActiveRequest.FromString,
-                    response_serializer=RaftManager__pb2.SendActiveResponse.SerializeToString,
+            'SendRole': grpc.unary_unary_rpc_method_handler(
+                    servicer.SendRole,
+                    request_deserializer=RaftManager__pb2.SendRoleRequest.FromString,
+                    response_serializer=RaftManager__pb2.SendRoleResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -70,7 +70,7 @@ class RaftManager(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def SendActive(request,
+    def SendRole(request,
             target,
             options=(),
             channel_credentials=None,
@@ -83,9 +83,9 @@ class RaftManager(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/RaftManager/SendActive',
-            RaftManager__pb2.SendActiveRequest.SerializeToString,
-            RaftManager__pb2.SendActiveResponse.FromString,
+            '/RaftManager/SendRole',
+            RaftManager__pb2.SendRoleRequest.SerializeToString,
+            RaftManager__pb2.SendRoleResponse.FromString,
             options,
             channel_credentials,
             insecure,

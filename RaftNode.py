@@ -5,7 +5,11 @@ import random
 import raft_pb2
 import raft_pb2_grpc
 
+import RaftManager_pb2
+import RaftManager_pb2_grpc
+
 MANAGER_PORT = 50000
+
 
 class RaftNode(raft_pb2_grpc.RaftServicer):
     def __init__(self, node_id, port):
@@ -121,6 +125,8 @@ class RaftNode(raft_pb2_grpc.RaftServicer):
             self.state = "leader"
             print(f"Node {self.node_id} became the leader for term {self.current_term}")
 
+        self.SendRoleToManager()
+
     def run(self):
         try:
             while True:
@@ -182,6 +188,15 @@ class RaftNode(raft_pb2_grpc.RaftServicer):
 
     def GetState(self, request, context):
         return raft_pb2.GetRoleResponse(role=self.state)
+
+    def SendRoleToManager(self):
+        with grpc.insecure_channel(f"localhost:{MANAGER_PORT}") as channel:
+            stub = RaftManager_pb2_grpc.RaftManagerStub(channel)
+            stub.SendRole(
+                RaftManager_pb2.SendRoleRequest(nodeId=self.node_id, role=self.state)
+            )
+
+        print(f"Node {self.node_id} sent role {self.state} to manager")
 
     def Serve(self):
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
