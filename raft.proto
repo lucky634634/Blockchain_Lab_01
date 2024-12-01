@@ -51,14 +51,11 @@ message GetActiveRequest {}
 
 message GetActiveResponse { bool active = 1; }
 
-message AddPeerRequest {
-  int32 peerId = 1;
-  int32 port = 2;
-}
+message AddPeerRequest { int32 port = 2; }
 
 message AddPeerResponse { bool success = 1; }
 
-message RemovePeerRequest { int32 peerId = 1; }
+message RemovePeerRequest { int32 port = 1; }
 
 message RemovePeerResponse { bool success = 1; }
 

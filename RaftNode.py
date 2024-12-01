@@ -100,7 +100,6 @@ class RaftNode(raft_pb2_grpc.RaftServicer):
         print(f"Node {self.node_id} starting election for term {self.current_term}")
 
         for peer in self.peers:
-            print(f"Node {self.node_id} connecting to Node {peer}")
             with grpc.insecure_channel(f"localhost:{peer}") as channel:
                 stub = raft_pb2_grpc.RaftStub(channel)
                 try:
@@ -115,10 +114,12 @@ class RaftNode(raft_pb2_grpc.RaftServicer):
                     if response.voteGranted:
                         votes += 1
                         print(
-                            f"Node {self.node_id} received vote from Node {peer.split(':')[1]}"
+                            f"Node {self.node_id} received vote from Node {peer - 50050}"
                         )
                 except grpc.RpcError:
-                    print(f"Node {self.node_id} failed to connect to Node {peer}")
+                    print(
+                        f"Node {self.node_id} failed to connect to Node {peer - 50050}"
+                    )
                     self.peers.remove(peer)
 
         if votes > len(self.peers) // 2:
@@ -145,9 +146,9 @@ class RaftNode(raft_pb2_grpc.RaftServicer):
             pass
 
     def send_heartbeats(self):
+        print(f"Leader Node {self.node_id} sending heartbeats")
         for peer in self.peers:
-            print(f"Leader Node {self.node_id} sending heartbeat to Node {peer}")
-            with grpc.insecure_channel(peer) as channel:
+            with grpc.insecure_channel(f"localhost:{peer}") as channel:
                 stub = raft_pb2_grpc.RaftStub(channel)
                 try:
                     stub.AppendEntries(
@@ -162,7 +163,7 @@ class RaftNode(raft_pb2_grpc.RaftServicer):
                     )
                 except grpc.RpcError:
                     print(
-                        f"Leader Node {self.node_id} failed to send heartbeat to Node {peer}"
+                        f"Leader Node {self.node_id} failed to send heartbeat to Node {peer - 50050}"
                     )
 
     def SetActive(self, request, context):
@@ -173,11 +174,14 @@ class RaftNode(raft_pb2_grpc.RaftServicer):
         return raft_pb2.SetActiveResponse(active=self.isActive)
 
     def AddPeer(self, request, context):
-        self.peers.append(request.peer)
+        if request.port in self.peers:
+            return raft_pb2.AddPeerResponse(success=False)
+        self.peers.append(request.port)
+        print(f"Node {self.node_id} added peer {request.port}")
         return raft_pb2.AddPeerResponse(success=True)
 
     def RemovePeer(self, request, context):
-        self.peers.remove(request.peer)
+        self.peers.remove(request.port)
         return raft_pb2.RemovePeerResponse(success=True)
 
     def GetPeers(self, request, context):

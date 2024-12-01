@@ -8,6 +8,9 @@ import RaftManager_pb2
 import RaftManager_pb2_grpc
 from concurrent import futures
 
+import raft_pb2
+import raft_pb2_grpc
+
 PORT = 50000
 
 
@@ -17,14 +20,41 @@ class Node:
         self.port = port
         self.isActive = True
         self.process = subprocess.Popen(
-            ["python", "RaftNode.py", str(node_id)], stdout=subprocess.PIPE
+            ["python", "RaftNode.py", str(node_id)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+            text=True,
         )
         self.role = "follower"
+        self.peers = []
+
+        self.logText = ""
+
+        self.stdout_thread = threading.Thread(target=self.UpdateLog)
+        self.stdout_thread.start()
+
+    def UpdateLog(self):
+        while self.isActive:
+            line = self.process.stdout.readline()
+            if not line:
+                continue
+            self.logText = line + self.logText
+            print(line, end="")
+        self.process.stdout.close()
+        self.process.stderr.close()
+
+    def Terminate(self):
+        result = self.process.terminate()
+        if result:
+            print(f"Node {self.node_id} terminated")
+        self.isActive = False
 
 
 class NodeWindow:
     def __init__(self, manager, node_id):
-        self.parent = manager
+        self.manager = manager
+        self.parent = manager.root
         self.node_id = node_id
         self.Setup()
 
@@ -37,6 +67,21 @@ class NodeWindow:
         self.frame.pack()
         self.listBox = tk.Listbox(self.frame, width=100, height=10)
         self.listBox.pack()
+        self.GetPeers()
+        self.logText = tk.Text(self.frame, width=80, height=10)
+        self.logText.pack()
+        self.UpdateLog()
+
+    def GetPeers(self):
+        self.listBox.delete(0, tk.END)
+        for peer in self.manager.nodes[self.node_id].peers:
+            self.listBox.insert(tk.END, peer)
+
+    def UpdateLog(self):
+        node = self.manager.nodes[self.node_id].logText
+        self.logText.delete("1.0", "end")
+        self.logText.insert("1.0", node)
+        self.root.after(1000, self.UpdateLog)
 
 
 class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
@@ -45,6 +90,7 @@ class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
         self.root.title("Raft Manager")
         self.nodes = {}
         self.node_id_counter = 0
+        self.child_windows = {}
         self.Setup()
 
     def AddNode(self):
@@ -53,9 +99,13 @@ class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
             return
         node_id = self.node_id_counter
         self.node_id_counter += 1
-        node = Node(node_id, 50050 + node_id)
-        self.nodes[node_id] = node
+        raftNode = Node(node_id, 50050 + node_id)
+        self.nodes[node_id] = raftNode
         self.node_list.insert(tk.END, node_id)
+        for node in self.nodes:
+            for other in self.nodes:
+                if other != node and other not in self.nodes[node].peers:
+                    self.AddPeer(node, 50050 + other)
 
     def RemoveNode(self):
         if self.node_list.curselection():
@@ -68,11 +118,14 @@ class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
                 self.child_windows[node_id].root.destroy()
                 del self.child_windows[node_id]
 
+        for other in self.nodes:
+            self.RemovePeer(node_id, 50050 + other)
+
     def ViewNode(self):
         if self.node_list.curselection():
             node_id = self.node_list.curselection()[0]
             print(f"Viewing Node {node_id}")
-            self.child_windows[node_id] = NodeWindow(self.root, node_id)
+            self.child_windows[node_id] = NodeWindow(self, node_id)
 
     def Setup(self):
         self.root.geometry("800x600")
@@ -114,13 +167,24 @@ class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
         pass
 
     def GetPeers(self, node_id):
-        pass
+        with grpc.insecure_channel(f"localhost:{self.nodes[node_id].port}") as channel:
+            stub = raft_pb2_grpc.RaftStub(channel)
+            response = stub.GetPeers(raft_pb2.GetPeersRequest())
+            return response.peers
 
     def AddPeer(self, node_id, peer):
-        pass
+        with grpc.insecure_channel(f"localhost:{self.nodes[node_id].port}") as channel:
+            stub = raft_pb2_grpc.RaftStub(channel)
+            response = stub.AddPeer(raft_pb2.AddPeerRequest(port=peer))
+            if response.success:
+                self.nodes[node_id].peers.append(peer)
 
     def RemovePeer(self, node_id, peer):
-        pass
+        with grpc.insecure_channel(f"localhost:{self.nodes[node_id].port}") as channel:
+            stub = raft_pb2_grpc.RaftStub(channel)
+            response = stub.RemovePeer(raft_pb2.RemovePeerRequest(port=peer))
+            if response.success:
+                self.nodes[node_id].peers.remove(peer)
 
     def EnableNode(self):
         pass
@@ -141,9 +205,10 @@ class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
         server.start()
         self.root.mainloop()
         for node in self.nodes.values():
-            node.process.kill()
+            node.Terminate()
 
 
 if __name__ == "__main__":
     manager = RaftManager()
     manager.Run()
+    exit(0)
