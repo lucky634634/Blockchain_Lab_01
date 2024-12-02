@@ -30,13 +30,15 @@ class Node:
         self.peers = []
 
         self.logText = ""
+        self.logBool = True
 
         self.stdout_thread = threading.Thread(target=self.UpdateLog)
         self.stdout_thread.start()
 
     def UpdateLog(self):
-        while self.isActive:
+        while self.logBool:
             line = self.process.stdout.readline()
+            # error = self.process.stderr.readline()
             if not line:
                 continue
             self.logText = line + self.logText
@@ -49,6 +51,7 @@ class Node:
         if result:
             print(f"Node {self.node_id} terminated")
         self.isActive = False
+        self.logBool = False
 
 
 class NodeWindow:
@@ -160,11 +163,18 @@ class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
         )
         self.DisableNodeButton.pack(pady=10)
 
-    def GetState(self, node_id):
-        pass
+    def GetActive(self, node_id):
+        with grpc.insecure_channel(f"localhost:{self.nodes[node_id].port}") as channel:
+            stub = raft_pb2_grpc.RaftStub(channel)
+            response = stub.GetIsActive(raft_pb2.GetIsActiveRequest())
+            self.nodes[node_id].isActive = response.active
+            return response.state
 
-    def SetState(self, node_id, state):
-        pass
+    def SetActive(self, node_id, isActive):
+        self.nodes[node_id].isActive = isActive
+        with grpc.insecure_channel(f"localhost:{self.nodes[node_id].port}") as channel:
+            stub = raft_pb2_grpc.RaftStub(channel)
+            stub.SetIsActive(raft_pb2.SetIsActiveRequest(active=isActive))
 
     def GetPeers(self, node_id):
         with grpc.insecure_channel(f"localhost:{self.nodes[node_id].port}") as channel:
@@ -187,10 +197,16 @@ class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
                 self.nodes[node_id].peers.remove(peer)
 
     def EnableNode(self):
-        pass
+        if self.node_list.curselection():
+            node_id = self.node_list.curselection()[0]
+            self.SetActive(node_id, True)
+            self.nodes[node_id].isActive = True
 
     def DisableNode(self):
-        pass
+        if self.node_list.curselection():
+            node_id = self.node_list.curselection()[0]
+            self.SetActive(node_id, False)
+            self.nodes[node_id].isActive = False
 
     def SendRole(self, request, context):
         node_id = request.nodeId

@@ -44,15 +44,15 @@ class RaftStub(object):
                 request_serializer=raft__pb2.AppendEntriesRequest.SerializeToString,
                 response_deserializer=raft__pb2.AppendEntriesResponse.FromString,
                 _registered_method=True)
-        self.SetActive = channel.unary_unary(
-                '/Raft/SetActive',
-                request_serializer=raft__pb2.SetActiveRequest.SerializeToString,
-                response_deserializer=raft__pb2.SetActiveResponse.FromString,
+        self.SetIsActive = channel.unary_unary(
+                '/Raft/SetIsActive',
+                request_serializer=raft__pb2.SetIsActiveRequest.SerializeToString,
+                response_deserializer=raft__pb2.SetIsActiveResponse.FromString,
                 _registered_method=True)
-        self.GetActive = channel.unary_unary(
-                '/Raft/GetActive',
-                request_serializer=raft__pb2.GetActiveRequest.SerializeToString,
-                response_deserializer=raft__pb2.GetActiveResponse.FromString,
+        self.GetIsActive = channel.unary_unary(
+                '/Raft/GetIsActive',
+                request_serializer=raft__pb2.GetIsActiveRequest.SerializeToString,
+                response_deserializer=raft__pb2.GetIsActiveResponse.FromString,
                 _registered_method=True)
         self.AddPeer = channel.unary_unary(
                 '/Raft/AddPeer',
@@ -74,10 +74,10 @@ class RaftStub(object):
                 request_serializer=raft__pb2.GetNodeIdRequest.SerializeToString,
                 response_deserializer=raft__pb2.GetNodeIdResponse.FromString,
                 _registered_method=True)
-        self.GetState = channel.unary_unary(
-                '/Raft/GetState',
-                request_serializer=raft__pb2.GetStateRequest.SerializeToString,
-                response_deserializer=raft__pb2.GetStateResponse.FromString,
+        self.GetRole = channel.unary_unary(
+                '/Raft/GetRole',
+                request_serializer=raft__pb2.GetRoleRequest.SerializeToString,
+                response_deserializer=raft__pb2.GetRoleResponse.FromString,
                 _registered_method=True)
 
 
@@ -96,13 +96,13 @@ class RaftServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SetActive(self, request, context):
+    def SetIsActive(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetActive(self, request, context):
+    def GetIsActive(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -132,7 +132,7 @@ class RaftServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetState(self, request, context):
+    def GetRole(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -151,15 +151,15 @@ def add_RaftServicer_to_server(servicer, server):
                     request_deserializer=raft__pb2.AppendEntriesRequest.FromString,
                     response_serializer=raft__pb2.AppendEntriesResponse.SerializeToString,
             ),
-            'SetActive': grpc.unary_unary_rpc_method_handler(
-                    servicer.SetActive,
-                    request_deserializer=raft__pb2.SetActiveRequest.FromString,
-                    response_serializer=raft__pb2.SetActiveResponse.SerializeToString,
+            'SetIsActive': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetIsActive,
+                    request_deserializer=raft__pb2.SetIsActiveRequest.FromString,
+                    response_serializer=raft__pb2.SetIsActiveResponse.SerializeToString,
             ),
-            'GetActive': grpc.unary_unary_rpc_method_handler(
-                    servicer.GetActive,
-                    request_deserializer=raft__pb2.GetActiveRequest.FromString,
-                    response_serializer=raft__pb2.GetActiveResponse.SerializeToString,
+            'GetIsActive': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetIsActive,
+                    request_deserializer=raft__pb2.GetIsActiveRequest.FromString,
+                    response_serializer=raft__pb2.GetIsActiveResponse.SerializeToString,
             ),
             'AddPeer': grpc.unary_unary_rpc_method_handler(
                     servicer.AddPeer,
@@ -181,10 +181,10 @@ def add_RaftServicer_to_server(servicer, server):
                     request_deserializer=raft__pb2.GetNodeIdRequest.FromString,
                     response_serializer=raft__pb2.GetNodeIdResponse.SerializeToString,
             ),
-            'GetState': grpc.unary_unary_rpc_method_handler(
-                    servicer.GetState,
-                    request_deserializer=raft__pb2.GetStateRequest.FromString,
-                    response_serializer=raft__pb2.GetStateResponse.SerializeToString,
+            'GetRole': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetRole,
+                    request_deserializer=raft__pb2.GetRoleRequest.FromString,
+                    response_serializer=raft__pb2.GetRoleResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -252,7 +252,7 @@ class Raft(object):
             _registered_method=True)
 
     @staticmethod
-    def SetActive(request,
+    def SetIsActive(request,
             target,
             options=(),
             channel_credentials=None,
@@ -265,9 +265,9 @@ class Raft(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/Raft/SetActive',
-            raft__pb2.SetActiveRequest.SerializeToString,
-            raft__pb2.SetActiveResponse.FromString,
+            '/Raft/SetIsActive',
+            raft__pb2.SetIsActiveRequest.SerializeToString,
+            raft__pb2.SetIsActiveResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -279,7 +279,7 @@ class Raft(object):
             _registered_method=True)
 
     @staticmethod
-    def GetActive(request,
+    def GetIsActive(request,
             target,
             options=(),
             channel_credentials=None,
@@ -292,9 +292,9 @@ class Raft(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/Raft/GetActive',
-            raft__pb2.GetActiveRequest.SerializeToString,
-            raft__pb2.GetActiveResponse.FromString,
+            '/Raft/GetIsActive',
+            raft__pb2.GetIsActiveRequest.SerializeToString,
+            raft__pb2.GetIsActiveResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -414,7 +414,7 @@ class Raft(object):
             _registered_method=True)
 
     @staticmethod
-    def GetState(request,
+    def GetRole(request,
             target,
             options=(),
             channel_credentials=None,
@@ -427,9 +427,9 @@ class Raft(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/Raft/GetState',
-            raft__pb2.GetStateRequest.SerializeToString,
-            raft__pb2.GetStateResponse.FromString,
+            '/Raft/GetRole',
+            raft__pb2.GetRoleRequest.SerializeToString,
+            raft__pb2.GetRoleResponse.FromString,
             options,
             channel_credentials,
             insecure,

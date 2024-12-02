@@ -3,13 +3,16 @@ syntax = "proto3";
 service Raft {
   rpc RequestVote(RequestVoteRequest) returns (RequestVoteResponse);
   rpc AppendEntries(AppendEntriesRequest) returns (AppendEntriesResponse);
-  rpc SetActive(SetActiveRequest) returns (SetActiveResponse);
-  rpc GetActive(GetActiveRequest) returns (GetActiveResponse);
+
+  rpc SetIsActive(SetIsActiveRequest) returns (SetIsActiveResponse);
+  rpc GetIsActive(GetIsActiveRequest) returns (GetIsActiveResponse);
+  
   rpc AddPeer(AddPeerRequest) returns (AddPeerResponse);
   rpc RemovePeer(RemovePeerRequest) returns (RemovePeerResponse);
   rpc GetPeers(GetPeersRequest) returns (GetPeersResponse);
   rpc GetNodeId(GetNodeIdRequest) returns (GetNodeIdResponse);
-  rpc GetState(GetStateRequest) returns (GetStateResponse);
+  rpc GetRole(GetRoleRequest) returns (GetRoleResponse);
+
 }
 
 message RequestVoteRequest {
@@ -43,13 +46,13 @@ message LogEntry {
   string command = 2;
 }
 
-message SetActiveRequest { bool active = 1; }
+message SetIsActiveRequest { bool active = 1; }
 
-message SetActiveResponse { bool success = 1; }
+message SetIsActiveResponse { bool success = 1; }
 
-message GetActiveRequest {}
+message GetIsActiveRequest { int32 nodeId = 1; }
 
-message GetActiveResponse { bool active = 1; }
+message GetIsActiveResponse { bool active = 1; }
 
 message AddPeerRequest { int32 port = 2; }
 
@@ -59,14 +62,14 @@ message RemovePeerRequest { int32 port = 1; }
 
 message RemovePeerResponse { bool success = 1; }
 
-message GetPeersRequest {}
+message GetPeersRequest { int32 nodeId = 1; }
 
 message GetPeersResponse { repeated int32 peers = 1; }
 
-message GetNodeIdRequest {}
+message GetNodeIdRequest { int32 port = 1; }
 
 message GetNodeIdResponse { int32 nodeId = 1; }
 
-message GetStateRequest {}
+message GetRoleRequest { int32 nodeId = 1; }
 
-message GetStateResponse { string role = 1; }
+message GetRoleResponse { string role = 1; }
