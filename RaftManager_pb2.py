@@ -24,17 +24,25 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11RaftManager.proto\"/\n\x0fSendRoleRequest\x12\x0e\n\x06nodeId\x18\x01 \x01(\x05\x12\x0c\n\x04role\x18\x02 \x01(\t\"#\n\x10SendRoleResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x32>\n\x0bRaftManager\x12/\n\x08SendRole\x12\x10.SendRoleRequest\x1a\x11.SendRoleResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x11RaftManager.proto\"3\n\x0fIsActiveRequest\x12\x0e\n\x06nodeId\x18\x01 \x01(\x05\x12\x10\n\x08isActive\x18\x02 \x01(\x08\"$\n\x10IsActiveResponse\x12\x10\n\x08isActive\x18\x01 \x01(\x08\"/\n\x0fSendRoleRequest\x12\x0e\n\x06nodeId\x18\x01 \x01(\x05\x12\x0c\n\x04role\x18\x02 \x01(\t\" \n\x10SendRoleResponse\x12\x0c\n\x04role\x18\x01 \x01(\t\"/\n\x0fSendTermRequest\x12\x0e\n\x06nodeId\x18\x01 \x01(\x05\x12\x0c\n\x04term\x18\x02 \x01(\x05\" \n\x10SendTermResponse\x12\x0c\n\x04term\x18\x01 \x01(\x05\x32\xa4\x01\n\x0bRaftManager\x12\x33\n\x0cSendIsActive\x12\x10.IsActiveRequest\x1a\x11.IsActiveResponse\x12/\n\x08SendRole\x12\x10.SendRoleRequest\x1a\x11.SendRoleResponse\x12/\n\x08SendTerm\x12\x10.SendTermRequest\x1a\x11.SendTermResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'RaftManager_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_SENDROLEREQUEST']._serialized_start=21
-  _globals['_SENDROLEREQUEST']._serialized_end=68
-  _globals['_SENDROLERESPONSE']._serialized_start=70
-  _globals['_SENDROLERESPONSE']._serialized_end=105
-  _globals['_RAFTMANAGER']._serialized_start=107
-  _globals['_RAFTMANAGER']._serialized_end=169
+  _globals['_ISACTIVEREQUEST']._serialized_start=21
+  _globals['_ISACTIVEREQUEST']._serialized_end=72
+  _globals['_ISACTIVERESPONSE']._serialized_start=74
+  _globals['_ISACTIVERESPONSE']._serialized_end=110
+  _globals['_SENDROLEREQUEST']._serialized_start=112
+  _globals['_SENDROLEREQUEST']._serialized_end=159
+  _globals['_SENDROLERESPONSE']._serialized_start=161
+  _globals['_SENDROLERESPONSE']._serialized_end=193
+  _globals['_SENDTERMREQUEST']._serialized_start=195
+  _globals['_SENDTERMREQUEST']._serialized_end=242
+  _globals['_SENDTERMRESPONSE']._serialized_start=244
+  _globals['_SENDTERMRESPONSE']._serialized_end=276
+  _globals['_RAFTMANAGER']._serialized_start=279
+  _globals['_RAFTMANAGER']._serialized_end=443
 # @@protoc_insertion_point(module_scope)
