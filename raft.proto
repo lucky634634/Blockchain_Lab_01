@@ -10,6 +10,11 @@ service Raft {
   rpc RequestVote(RequestVoteRequest) returns (RequestVoteResponse);
 
   rpc AppendEntries(AppendEntriesRequest) returns (AppendEntriesResponse);
+
+  rpc AddPeer(AddPeerRequest) returns (AddPeerResponse);
+  rpc RemovePeer(RemovePeerRequest) returns (RemovePeerResponse);
+
+  rpc SendCommand(SendCommandRequest) returns (SendCommandResponse);
 }
 
 message SetIsActiveRequest { bool isActive = 1; }
@@ -17,7 +22,6 @@ message SetIsActiveResponse { bool isActive = 1; }
 
 message GetIsActiveRequest { bool isActive = 1; }
 message GetIsActiveResponse { bool isActive = 1; }
-
 
 message StopRequest { bool stop = 1; }
 message StopResponse { bool stopped = 1; }
@@ -52,3 +56,12 @@ message AppendEntriesResponse {
   int32 term = 1;
   bool success = 2;
 }
+
+message AddPeerRequest { int32 port = 1; }
+message AddPeerResponse { int32 port = 1; }
+
+message RemovePeerRequest { int32 port = 1; }
+message RemovePeerResponse { int32 port = 1; }
+
+message SendCommandRequest { string command = 1; }
+message SendCommandResponse { string status = 1; }
