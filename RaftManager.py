@@ -1,230 +1,214 @@
-import tkinter as tk
-from tkinter import messagebox
-import subprocess
-import threading
+import dearpygui
+import dearpygui.dearpygui as dpg
 
 import grpc
+import Raft_pb2
+import Raft_pb2_grpc
 import RaftManager_pb2
 import RaftManager_pb2_grpc
 from concurrent import futures
 
-import raft_pb2
-import raft_pb2_grpc
+import sys
+import time
+import threading
+import subprocess
+import os
 
-PORT = 50000
+PORT = 40000
+
+NODE_PORT_OFFSET = 50000
 
 
 class Node:
-    def __init__(self, node_id, port):
-        self.node_id = node_id
-        self.port = port
+    def __init__(self, manager, nodeId: int):
+        self.nodeId = nodeId
+        self.manager = manager
         self.isActive = True
+        self.isRunning = True
         self.process = subprocess.Popen(
-            ["python", "RaftNode.py", str(node_id)],
+            ["python", "RaftNode.py", str(nodeId)],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            shell=True,
             text=True,
+            shell=True,
         )
-        self.role = "follower"
-        self.peers = []
+        self.stdoutThread = threading.Thread(target=self.ReadStdout)
+        self.stdoutThread.start()
 
-        self.logText = ""
-        self.logBool = True
-
-        self.stdout_thread = threading.Thread(target=self.UpdateLog)
-        self.stdout_thread.start()
-
-    def UpdateLog(self):
-        while self.logBool:
+    def ReadStdout(self):
+        while self.isRunning:
             line = self.process.stdout.readline()
-            # error = self.process.stderr.readline()
-            if not line:
+
+            if line == "" or line == "\n":
                 continue
-            self.logText = line + self.logText
-            print(line, end="")
+            print(f"Node {self.nodeId}: {line}", end="")
+
         self.process.stdout.close()
         self.process.stderr.close()
 
-    def Terminate(self):
-        result = self.process.terminate()
-        if result:
-            print(f"Node {self.node_id} terminated")
-        self.isActive = False
-        self.logBool = False
+    def Stop(self):
+        # result = self.process.terminate()
+        # if result:
+        #     print("Node " + str(self.nodeId) + " stopped")
+        self.isRunning = False
 
-
-class NodeWindow:
-    def __init__(self, manager, node_id):
-        self.manager = manager
-        self.parent = manager.root
-        self.node_id = node_id
-        self.Setup()
-
-    def Setup(self):
-        self.parent = manager.root
-        self.root = tk.Toplevel(self.parent)
-        self.root.title(f"Node {self.node_id}")
-        self.root.geometry("800x600")
-        self.frame = tk.Frame(self.root)
-        self.frame.pack()
-        self.listBox = tk.Listbox(self.frame, width=100, height=10)
-        self.listBox.pack()
-        self.GetPeers()
-        self.logText = tk.Text(self.frame, width=80, height=10)
-        self.logText.pack()
-        self.UpdateLog()
-
-    def GetPeers(self):
-        self.listBox.delete(0, tk.END)
-        for peer in self.manager.nodes[self.node_id].peers:
-            self.listBox.insert(tk.END, peer)
-
-    def UpdateLog(self):
-        node = self.manager.nodes[self.node_id].logText
-        self.logText.delete("1.0", "end")
-        self.logText.insert("1.0", node)
-        self.root.after(1000, self.UpdateLog)
+        try:
+            with grpc.insecure_channel(
+                f"localhost:{NODE_PORT_OFFSET + self.nodeId}"
+            ) as channel:
+                stub = Raft_pb2_grpc.RaftStub(channel)
+                stub.Stop(Raft_pb2.StopRequest())
+        except grpc.RpcError as e:
+            pass
 
 
 class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
     def __init__(self):
-        self.root = tk.Tk()
-        self.root.title("Raft Manager")
-        self.nodes = {}
-        self.node_id_counter = 0
-        self.child_windows = {}
+        self.nodeList = []
+        self.selectedNode = 0
         self.Setup()
 
-    def AddNode(self):
-        if len(self.nodes) >= 10:
-            messagebox.showinfo("Error", "Cannot add more than 10 nodes")
-            return
-        node_id = self.node_id_counter
-        self.node_id_counter += 1
-        raftNode = Node(node_id, 50050 + node_id)
-        self.nodes[node_id] = raftNode
-        self.node_list.insert(tk.END, node_id)
-        for node in self.nodes:
-            for other in self.nodes:
-                if other != node and other not in self.nodes[node].peers:
-                    self.AddPeer(node, 50050 + other)
-
-    def RemoveNode(self):
-        if self.node_list.curselection():
-            node_id = self.node_list.curselection()[0]
-            print(f"Removing Node {node_id}")
-            self.nodes[node_id].process.kill()
-            self.node_list.delete(node_id)
-            self.nodes.pop(node_id)
-            if node_id in self.child_windows:
-                self.child_windows[node_id].root.destroy()
-                del self.child_windows[node_id]
-
-        for other in self.nodes:
-            self.RemovePeer(node_id, 50050 + other)
-
-    def ViewNode(self):
-        if self.node_list.curselection():
-            node_id = self.node_list.curselection()[0]
-            print(f"Viewing Node {node_id}")
-            self.child_windows[node_id] = NodeWindow(self, node_id)
-
     def Setup(self):
-        self.root.geometry("800x600")
+        dpg.create_context()
+        dpg.create_viewport(title="RaftManager", width=800, height=600)
 
-        self.root.frame = tk.Frame(self.root)
-        self.root.frame.pack()
-        self.node_list = tk.Listbox(self.root.frame, width=100, height=10)
-        self.node_list.pack(pady=10)
+        with dpg.window(
+            label="RaftManager", width=800, height=600, tag="main_window", no_close=True
+        ):
+            with dpg.table(header_row=True, width=800, tag="raft_table") as nodeTable:
+                dpg.add_table_column(label="ID")
+                dpg.add_table_column(label="Port")
+                dpg.add_table_column(label="IsActive")
+                dpg.add_table_column(label="Role")
+                dpg.add_table_column(label="CurrentTerm")
 
-        self.add_node_button = tk.Button(
-            self.root.frame, text="Add Node", command=self.AddNode
-        )
-        self.add_node_button.pack(pady=10)
+                for i in range(5):
+                    with dpg.table_row():
+                        dpg.add_selectable(
+                            label=f"Node {i}",
+                            tag=f"node_{i}",
+                            callback=self.HandleSelectNode,
+                            user_data=i,
+                        )
+                        dpg.add_text(NODE_PORT_OFFSET + i, tag=f"node_port_{i}")
+                        dpg.add_text(True, tag=f"node_active_{i}")
+                        dpg.add_text("Role", tag=f"node_role_{i}")
+                        dpg.add_text(0, tag=f"node_term_{i}")
+            with dpg.table(header_row=True, width=800, tag="node_table"):
+                dpg.add_table_column(label="ID")
+                for i in range(5):
+                    dpg.add_table_column(label=f"Node {i}")
 
-        self.remove_node_button = tk.Button(
-            self.root.frame, text="Remove Node", command=self.RemoveNode
-        )
-        self.remove_node_button.pack(pady=10)
+                for i in range(5):
+                    with dpg.table_row():
+                        dpg.add_text(f"Node {i}")
+                        for j in range(5):
+                            if i == j:
+                                dpg.add_text("X")
+                                continue
+                            if i < j:
+                                dpg.add_text("-")
+                                continue
+                            dpg.add_checkbox(
+                                tag=f"node_{i}_{j}",
+                                callback=self.HandleTogglePeer,
+                                user_data=f"{i}_{j}",
+                                default_value=True,
+                            )
 
-        self.view_node_button = tk.Button(
-            self.root.frame, text="View Node", command=self.ViewNode
-        )
-        self.view_node_button.pack(pady=10)
+            dpg.add_text(tag="SelectedNodeText", default_value="Selected node: -1")
+            dpg.add_button(label="Enable", callback=self.HandleEnableButton)
+            dpg.add_button(label="Disable", callback=self.HandleDisableButton)
+            dpg.add_button(label="Enable All", callback=self.HandleEnableAllButton)
+            dpg.add_button(label="Disable All", callback=self.HandleDisableAllButton)
 
-        self.EnableNodeButton = tk.Button(
-            self.root.frame, text="Enable Node", command=self.EnableNode
-        )
-        self.EnableNodeButton.pack(pady=10)
+        dpg.setup_dearpygui()
+        dpg.show_viewport()
 
-        self.DisableNodeButton = tk.Button(
-            self.root.frame, text="Disable Node", command=self.DisableNode
-        )
-        self.DisableNodeButton.pack(pady=10)
+    def HandleSelectNode(self, sender, app_data, user_data):
+        print(f"Selected node: {user_data}")
+        self.selectedNode = user_data
+        dpg.set_value("SelectedNodeText", f"Selected node: {user_data}")
 
-    def GetActive(self, node_id):
-        with grpc.insecure_channel(f"localhost:{self.nodes[node_id].port}") as channel:
-            stub = raft_pb2_grpc.RaftStub(channel)
-            response = stub.GetIsActive(raft_pb2.GetIsActiveRequest())
-            self.nodes[node_id].isActive = response.active
-            return response.state
+    def HandleTogglePeer(self, sender, app_data, user_data):
+        print(f"Toggle peer: {user_data}: {dpg.get_value(user_data)}")
 
-    def SetActive(self, node_id, isActive):
-        self.nodes[node_id].isActive = isActive
-        with grpc.insecure_channel(f"localhost:{self.nodes[node_id].port}") as channel:
-            stub = raft_pb2_grpc.RaftStub(channel)
-            stub.SetIsActive(raft_pb2.SetIsActiveRequest(active=isActive))
+    def HandleEnableButton(self):
+        if self.selectedNode != -1:
+            print(f"Enabled node: {self.selectedNode}")
+            self.nodeList[self.selectedNode].isActive = True
+            self.SetActive(self.selectedNode, True)
+            dpg.set_value(f"node_active_{self.selectedNode}", True)
 
-    def GetPeers(self, node_id):
-        with grpc.insecure_channel(f"localhost:{self.nodes[node_id].port}") as channel:
-            stub = raft_pb2_grpc.RaftStub(channel)
-            response = stub.GetPeers(raft_pb2.GetPeersRequest())
-            return response.peers
+    def HandleDisableButton(self):
+        if self.selectedNode != -1:
+            print(f"Disabled node: {self.selectedNode}")
+            self.nodeList[self.selectedNode].isActive = False
+            self.SetActive(self.selectedNode, False)
+            dpg.set_value(f"node_active_{self.selectedNode}", False)
 
-    def AddPeer(self, node_id, peer):
-        with grpc.insecure_channel(f"localhost:{self.nodes[node_id].port}") as channel:
-            stub = raft_pb2_grpc.RaftStub(channel)
-            response = stub.AddPeer(raft_pb2.AddPeerRequest(port=peer))
-            if response.success:
-                self.nodes[node_id].peers.append(peer)
+    def HandleEnableAllButton(self):
+        for node in self.nodeList:
+            node.isActive = True
+            self.SetActive(node.nodeId, True)
+            dpg.set_value(f"node_active_{node.nodeId}", True)
 
-    def RemovePeer(self, node_id, peer):
-        with grpc.insecure_channel(f"localhost:{self.nodes[node_id].port}") as channel:
-            stub = raft_pb2_grpc.RaftStub(channel)
-            response = stub.RemovePeer(raft_pb2.RemovePeerRequest(port=peer))
-            if response.success:
-                self.nodes[node_id].peers.remove(peer)
+    def HandleDisableAllButton(self):
+        for node in self.nodeList:
+            node.isActive = False
+            self.SetActive(node.nodeId, False)
+            dpg.set_value(f"node_active_{node.nodeId}", False)
 
-    def EnableNode(self):
-        if self.node_list.curselection():
-            node_id = self.node_list.curselection()[0]
-            self.SetActive(node_id, True)
-            self.nodes[node_id].isActive = True
-
-    def DisableNode(self):
-        if self.node_list.curselection():
-            node_id = self.node_list.curselection()[0]
-            self.SetActive(node_id, False)
-            self.nodes[node_id].isActive = False
-
-    def SendRole(self, request, context):
-        node_id = request.nodeId
-        role = request.role
-        self.nodes[node_id].role = role
-        return RaftManager_pb2.SendRoleResponse(success=True)
+    # def Loop(self):
+    #     try:
+    #         while dpg.is_dearpygui_running():
+    #             dpg.render_dearpygui_frame()
+    #     except KeyboardInterrupt:
+    #         pass
 
     def Run(self):
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         RaftManager_pb2_grpc.add_RaftManagerServicer_to_server(self, server)
         server.add_insecure_port(f"[::]:{PORT}")
         server.start()
-        self.root.mainloop()
-        for node in self.nodes.values():
-            node.Terminate()
+        time.sleep(1)
+        self.nodeList = [Node(self, i) for i in range(5)]
+        dpg.start_dearpygui()
+        dpg.destroy_context()
+        for node in self.nodeList:
+            node.Stop()
+
+    def SendIsActive(self, request, context):
+        nodeId = request.nodeId
+        isActive = request.isActive
+        self.nodeList[nodeId].isActive = isActive
+        dpg.set_value(f"node_active_{nodeId}", isActive)
+        return RaftManager_pb2.IsActiveResponse(isActive=self.nodeList[nodeId].isActive)
+
+    def SendRole(self, request, context):
+        nodeId = request.nodeId
+        role = request.role
+        self.nodeList[nodeId].role = role
+        dpg.set_value(f"node_role_{nodeId}", role)
+        return RaftManager_pb2.RoleResponse(role=self.nodeList[nodeId].role)
+
+    def SendTerm(self, request, context):
+        nodeId = request.nodeId
+        term = request.term
+        dpg.set_value(f"node_term_{nodeId}", term)
+        return RaftManager_pb2.TermResponse(term=self.nodeList[nodeId].currentTerm)
+
+    def SetActive(self, nodeId, isActive):
+        self.nodeList[nodeId].isActive = isActive
+        with grpc.insecure_channel(f"localhost:{NODE_PORT_OFFSET + nodeId}") as channel:
+            stub = Raft_pb2_grpc.RaftStub(channel)
+            try:
+                stub.SetIsActive(Raft_pb2.SetIsActiveRequest(isActive=isActive))
+            except grpc.RpcError as e:
+                pass
 
 
 if __name__ == "__main__":
     manager = RaftManager()
     manager.Run()
-    exit(0)
+    sys.exit(0)

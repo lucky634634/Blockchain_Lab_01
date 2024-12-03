@@ -1,12 +1,28 @@
 syntax = "proto3";
 
 service RaftManager {
+  rpc SendIsActive(IsActiveRequest) returns (IsActiveResponse);
   rpc SendRole(SendRoleRequest) returns (SendRoleResponse);
+  rpc SendTerm(SendTermRequest) returns (SendTermResponse);
 }
+
+message IsActiveRequest {
+  int32 nodeId = 1;
+  bool isActive = 2;
+}
+
+message IsActiveResponse { bool isActive = 1; }
 
 message SendRoleRequest {
   int32 nodeId = 1;
   string role = 2;
 }
 
-message SendRoleResponse { bool success = 1; }
+message SendRoleResponse { string role = 1; }
+
+message SendTermRequest {
+  int32 nodeId = 1;
+  int32 term = 2;
+}
+
+message SendTermResponse { int32 term = 1; }

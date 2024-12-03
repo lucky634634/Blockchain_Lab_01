@@ -34,17 +34,39 @@ class RaftManagerStub(object):
         Args:
             channel: A grpc.Channel.
         """
+        self.SendIsActive = channel.unary_unary(
+                '/RaftManager/SendIsActive',
+                request_serializer=RaftManager__pb2.IsActiveRequest.SerializeToString,
+                response_deserializer=RaftManager__pb2.IsActiveResponse.FromString,
+                _registered_method=True)
         self.SendRole = channel.unary_unary(
                 '/RaftManager/SendRole',
                 request_serializer=RaftManager__pb2.SendRoleRequest.SerializeToString,
                 response_deserializer=RaftManager__pb2.SendRoleResponse.FromString,
+                _registered_method=True)
+        self.SendTerm = channel.unary_unary(
+                '/RaftManager/SendTerm',
+                request_serializer=RaftManager__pb2.SendTermRequest.SerializeToString,
+                response_deserializer=RaftManager__pb2.SendTermResponse.FromString,
                 _registered_method=True)
 
 
 class RaftManagerServicer(object):
     """Missing associated documentation comment in .proto file."""
 
+    def SendIsActive(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def SendRole(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SendTerm(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -53,10 +75,20 @@ class RaftManagerServicer(object):
 
 def add_RaftManagerServicer_to_server(servicer, server):
     rpc_method_handlers = {
+            'SendIsActive': grpc.unary_unary_rpc_method_handler(
+                    servicer.SendIsActive,
+                    request_deserializer=RaftManager__pb2.IsActiveRequest.FromString,
+                    response_serializer=RaftManager__pb2.IsActiveResponse.SerializeToString,
+            ),
             'SendRole': grpc.unary_unary_rpc_method_handler(
                     servicer.SendRole,
                     request_deserializer=RaftManager__pb2.SendRoleRequest.FromString,
                     response_serializer=RaftManager__pb2.SendRoleResponse.SerializeToString,
+            ),
+            'SendTerm': grpc.unary_unary_rpc_method_handler(
+                    servicer.SendTerm,
+                    request_deserializer=RaftManager__pb2.SendTermRequest.FromString,
+                    response_serializer=RaftManager__pb2.SendTermResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -68,6 +100,33 @@ def add_RaftManagerServicer_to_server(servicer, server):
  # This class is part of an EXPERIMENTAL API.
 class RaftManager(object):
     """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def SendIsActive(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/RaftManager/SendIsActive',
+            RaftManager__pb2.IsActiveRequest.SerializeToString,
+            RaftManager__pb2.IsActiveResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
 
     @staticmethod
     def SendRole(request,
@@ -86,6 +145,33 @@ class RaftManager(object):
             '/RaftManager/SendRole',
             RaftManager__pb2.SendRoleRequest.SerializeToString,
             RaftManager__pb2.SendRoleResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SendTerm(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/RaftManager/SendTerm',
+            RaftManager__pb2.SendTermRequest.SerializeToString,
+            RaftManager__pb2.SendTermResponse.FromString,
             options,
             channel_credentials,
             insecure,
