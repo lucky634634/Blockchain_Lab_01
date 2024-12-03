@@ -84,6 +84,23 @@ class RaftNode(Raft_pb2_grpc.RaftServicer):
 
         return Raft_pb2.AppendEntriesResponse(term=self.currentTerm, success=True)
 
+    def AddPeer(self, request, context):
+        if request.port in self.peerPorts:
+            return Raft_pb2.AddPeerResponse(port=request.port)
+
+        self.peerPorts.append(request.port)
+        self.peerPorts.sort()
+        print("Add peer port" + str(request.port))
+        return Raft_pb2.AddPeerResponse(port=request.port)
+
+    def RemovePeer(self, request, context):
+        if request.port not in self.peerPorts:
+            return Raft_pb2.RemovePeerResponse(port=request.port)
+
+        self.peerPorts.remove(request.port)
+        print("Remove peer port" + str(request.port))
+        return Raft_pb2.RemovePeerResponse(port=request.port)
+
     def StartElection(self):
         self.role = "Candidate"
         self.currentTerm += 1

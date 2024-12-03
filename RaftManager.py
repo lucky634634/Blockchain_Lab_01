@@ -132,6 +132,25 @@ class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
 
     def HandleTogglePeer(self, sender, app_data, user_data):
         print(f"Toggle peer: {user_data}: {dpg.get_value(user_data)}")
+        value = dpg.get_value(user_data)
+        node1 = int(user_data.split("_")[0])
+        node2 = int(user_data.split("_")[1])
+        with grpc.insecure_channel(f"localhost:{NODE_PORT_OFFSET + node1}") as channel:
+            stub = Raft_pb2_grpc.RaftStub(channel)
+            if value:
+                stub.AddPeer(Raft_pb2.AddPeerRequest(port=NODE_PORT_OFFSET + node2))
+            else:
+                stub.RemovePeer(
+                    Raft_pb2.RemovePeerRequest(port=NODE_PORT_OFFSET + node2)
+                )
+        with grpc.insecure_channel(f"localhost:{NODE_PORT_OFFSET + node2}") as channel:
+            stub = Raft_pb2_grpc.RaftStub(channel)
+            if value:
+                stub.AddPeer(Raft_pb2.AddPeerRequest(port=NODE_PORT_OFFSET + node1))
+            else:
+                stub.RemovePeer(
+                    Raft_pb2.RemovePeerRequest(port=NODE_PORT_OFFSET + node1)
+                )
 
     def HandleEnableButton(self):
         if self.selectedNode != -1:
