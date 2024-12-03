@@ -39,6 +39,8 @@ class RaftNode(Raft_pb2_grpc.RaftServicer):
 
         self.leaderId = None
 
+        self.database = Database.Database()
+
     def SetIsActive(self, request, context):
         self.isActive = request.isActive
         return Raft_pb2.SetIsActiveResponse(isActive=self.isActive)
@@ -66,6 +68,7 @@ class RaftNode(Raft_pb2_grpc.RaftServicer):
         if request.term < self.currentTerm:
             return Raft_pb2.AppendEntriesResponse(term=self.currentTerm, success=False)
 
+        # print(f"Node {self.nodeId} received append entries from {request.leaderId}")
         self.timeoutReset = time.time()
         self.role = "Follower"
         self.currentTerm = request.term
@@ -81,6 +84,7 @@ class RaftNode(Raft_pb2_grpc.RaftServicer):
 
         if request.leaderCommit > self.commitIndex:
             self.commitIndex = min(request.leaderCommit, len(self.log) - 1)
+            self.ApplyLog()
 
         return Raft_pb2.AppendEntriesResponse(term=self.currentTerm, success=True)
 
@@ -164,6 +168,26 @@ class RaftNode(Raft_pb2_grpc.RaftServicer):
                 except grpc.RpcError as e:
                     if e.code() == grpc.StatusCode.UNKNOWN:
                         print(f"Error: Unknown peer {peer}")
+
+    def ApplyLog(self):
+        while self.lastApplied < self.commitIndex:
+            self.lastApplied += 1
+            term, command = self.log[self.lastApplied]
+            self.database.ApplyCommand(command)
+
+    def SendCommand(self, request, context):
+        if not self.isActive:
+            return Raft_pb2.SendCommandResponse(status="Not active")
+        if self.role != "Leader":
+            return Raft_pb2.SendCommandResponse(status="Not leader")
+        print(f"Node {self.nodeId} received command {request.command}")
+
+        status = self.database.ApplyCommand(request.command)
+        print(
+            f"Node {self.nodeId} applied command {request.command} and returned status {status}"
+        )
+
+        return Raft_pb2.SendCommandResponse(status=status)
 
     def GetId(self, port: int) -> int:
         return port - NODE_PORT_OFFSET

@@ -25,6 +25,8 @@ class Node:
         self.manager = manager
         self.isActive = True
         self.isRunning = True
+        self.role = "Follower"
+        self.currentTerm = 0
         self.process = subprocess.Popen(
             ["python", "RaftNode.py", str(nodeId)],
             stdout=subprocess.PIPE,
@@ -60,6 +62,9 @@ class Node:
                 stub.Stop(Raft_pb2.StopRequest())
         except grpc.RpcError as e:
             pass
+
+        self.stdoutThread.join()
+        self.process.wait()
 
 
 class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
@@ -116,11 +121,17 @@ class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
                                 default_value=True,
                             )
 
-            dpg.add_text(tag="SelectedNodeText", default_value="Selected node: -1")
+            dpg.add_text(
+                tag="SelectedNodeText",
+                default_value=f"Selected node: {self.selectedNode}",
+            )
             dpg.add_button(label="Enable", callback=self.HandleEnableButton)
             dpg.add_button(label="Disable", callback=self.HandleDisableButton)
             dpg.add_button(label="Enable All", callback=self.HandleEnableAllButton)
             dpg.add_button(label="Disable All", callback=self.HandleDisableAllButton)
+            dpg.add_input_text(label="Command", default_value="", tag="command_input")
+            dpg.add_button(label="Apply", callback=self.HandleApplyCommand)
+            dpg.add_text(label="Output: ",tag="command_output", default_value="Output: ")
 
         dpg.setup_dearpygui()
         dpg.show_viewport()
@@ -178,6 +189,25 @@ class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
             self.SetActive(node.nodeId, False)
             dpg.set_value(f"node_active_{node.nodeId}", False)
 
+    def HandleApplyCommand(self):
+        command = dpg.get_value("command_input")
+        for node in self.nodeList:
+            if node.isActive and node.role == "Leader":
+                with grpc.insecure_channel(
+                    f"localhost:{NODE_PORT_OFFSET + node.nodeId}"
+                ) as channel:
+                    stub = Raft_pb2_grpc.RaftStub(channel)
+                    output = ""
+                    try:
+                        response = stub.SendCommand(
+                            Raft_pb2.SendCommandRequest(command=command)
+                        )
+                        output = response.status
+                    except grpc.RpcError as e:
+                        if e.code() == grpc.StatusCode.UNKNOWN:
+                            print(f"Error: Unknown")
+                    dpg.set_value("command_output", f"Output: {output}")
+
     # def Loop(self):
     #     try:
     #         while dpg.is_dearpygui_running():
@@ -193,9 +223,9 @@ class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
         time.sleep(1)
         self.nodeList = [Node(self, i) for i in range(5)]
         dpg.start_dearpygui()
-        dpg.destroy_context()
         for node in self.nodeList:
             node.Stop()
+        dpg.destroy_context()
 
     def SendIsActive(self, request, context):
         nodeId = request.nodeId
@@ -214,6 +244,7 @@ class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
     def SendTerm(self, request, context):
         nodeId = request.nodeId
         term = request.term
+        self.nodeList[nodeId].currentTerm = term
         dpg.set_value(f"node_term_{nodeId}", term)
         return RaftManager_pb2.TermResponse(term=self.nodeList[nodeId].currentTerm)
 

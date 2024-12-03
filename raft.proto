@@ -13,6 +13,8 @@ service Raft {
 
   rpc AddPeer(AddPeerRequest) returns (AddPeerResponse);
   rpc RemovePeer(RemovePeerRequest) returns (RemovePeerResponse);
+
+  rpc SendCommand(SendCommandRequest) returns (SendCommandResponse);
 }
 
 message SetIsActiveRequest { bool isActive = 1; }
@@ -60,3 +62,6 @@ message AddPeerResponse { int32 port = 1; }
 
 message RemovePeerRequest { int32 port = 1; }
 message RemovePeerResponse { int32 port = 1; }
+
+message SendCommandRequest { string command = 1; }
+message SendCommandResponse { string status = 1; }
