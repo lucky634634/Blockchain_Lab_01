@@ -77,10 +77,8 @@ class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
         dpg.create_context()
         dpg.create_viewport(title="RaftManager", width=800, height=600)
 
-        with dpg.window(
-            label="RaftManager", width=800, height=600, tag="main_window", no_close=True
-        ):
-            with dpg.table(header_row=True, width=800, tag="raft_table") as nodeTable:
+        with dpg.window(label="RaftManager", tag="main_window", no_close=True):
+            with dpg.table(header_row=True, tag="raft_table") as nodeTable:
                 dpg.add_table_column(label="ID")
                 dpg.add_table_column(label="Port")
                 dpg.add_table_column(label="IsActive")
@@ -89,17 +87,12 @@ class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
 
                 for i in range(5):
                     with dpg.table_row():
-                        dpg.add_selectable(
-                            label=f"Node {i}",
-                            tag=f"node_{i}",
-                            callback=self.HandleSelectNode,
-                            user_data=i,
-                        )
+                        dpg.add_text(f"Node {i}", tag=f"node_id_{i}")
                         dpg.add_text(NODE_PORT_OFFSET + i, tag=f"node_port_{i}")
                         dpg.add_text(True, tag=f"node_active_{i}")
                         dpg.add_text("Role", tag=f"node_role_{i}")
                         dpg.add_text(0, tag=f"node_term_{i}")
-            with dpg.table(header_row=True, width=800, tag="node_table"):
+            with dpg.table(header_row=True, tag="node_table"):
                 dpg.add_table_column(label="ID")
                 for i in range(5):
                     dpg.add_table_column(label=f"Node {i}")
@@ -120,7 +113,12 @@ class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
                                 user_data=f"{i}_{j}",
                                 default_value=True,
                             )
-
+            dpg.add_spacer(height=10)
+            with dpg.group(horizontal=True):
+                for i in range(5):
+                    dpg.add_button(
+                        label=f"Node {i}", user_data=i, callback=self.HandleSelectNode
+                    )
             dpg.add_text(
                 tag="SelectedNodeText",
                 default_value=f"Selected node: {self.selectedNode}",
@@ -131,10 +129,13 @@ class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
             dpg.add_button(label="Disable All", callback=self.HandleDisableAllButton)
             dpg.add_input_text(label="Command", default_value="", tag="command_input")
             dpg.add_button(label="Apply", callback=self.HandleApplyCommand)
-            dpg.add_text(label="Output: ",tag="command_output", default_value="Output: ")
+            dpg.add_text(
+                label="Output: ", tag="command_output", default_value="Output: "
+            )
 
         dpg.setup_dearpygui()
         dpg.show_viewport()
+        dpg.set_primary_window("main_window", True)
 
     def HandleSelectNode(self, sender, app_data, user_data):
         print(f"Selected node: {user_data}")
