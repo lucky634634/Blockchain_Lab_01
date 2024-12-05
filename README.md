@@ -18,11 +18,6 @@
 ```
 cmd ./BuildProto.bat
 ```
-## Run Node
-
-```
-python RaftNode.py <Node_id>
-```
 
 ## Run Node Manager
 
