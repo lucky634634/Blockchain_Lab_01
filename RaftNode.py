@@ -60,7 +60,6 @@ class RaftNode(Raft_pb2_grpc.RaftServicer):
             or request.lastLogIndex >= len(self.log) - 1
         ):
             self.voteFor = request.candidateId
-            self.timeoutReset = time.time()
             return Raft_pb2.RequestVoteResponse(term=self.currentTerm, voteGranted=True)
         return Raft_pb2.RequestVoteResponse(term=self.currentTerm, voteGranted=False)
 
@@ -72,6 +71,7 @@ class RaftNode(Raft_pb2_grpc.RaftServicer):
         self.timeoutReset = time.time()
         self.role = "Follower"
         self.currentTerm = request.term
+        self.leaderId = request.leaderId
         self.SendRole()
 
         if request.prevLogIndex >= len(self.log) or (
@@ -108,7 +108,7 @@ class RaftNode(Raft_pb2_grpc.RaftServicer):
     def StartElection(self):
         self.role = "Candidate"
         self.currentTerm += 1
-        self.voteFor = self.nodeId
+        self.voteFor = None
         votes = 1
         totalVotes = 1
         for peerPort in self.peerPorts:
@@ -137,7 +137,7 @@ class RaftNode(Raft_pb2_grpc.RaftServicer):
                 if e.code() == grpc.StatusCode.UNAVAILABLE:
                     print(f"Error: Unavailable peer {peerPort}")
         print(f"Node {self.nodeId} received {votes} votes out of {totalVotes}")
-        if votes >= totalVotes // 2:
+        if votes > totalVotes // 2:
             self.role = "Leader"
             self.leaderId = self.nodeId
             print(f"Node {self.nodeId} became leader")
@@ -200,7 +200,24 @@ class RaftNode(Raft_pb2_grpc.RaftServicer):
                 if not self.isActive:
                     time.sleep(1)
                     continue
-
+                # if self.leaderId != None:
+                #     with grpc.insecure_channel(
+                #         f"localhost:{self.leaderId + NODE_PORT_OFFSET}"
+                #     ) as channel:
+                #         stub = Raft_pb2_grpc.RaftStub(channel)
+                #         try:
+                #             response = stub.GetIsActive(
+                #                 Raft_pb2.GetIsActiveRequest(isActive=True)
+                #             )
+                #             if response.isActive == False:
+                #                 self.leaderId = None
+                #                 self.timeoutReset = time.time()
+                #                 self.role = "Follower"
+                #         except grpc.RpcError as e:
+                #             if e.code() == grpc.StatusCode.UNKNOWN:
+                #                 print(f"Error: Unknown leader {self.leaderId}")
+                #             if e.code() == grpc.StatusCode.UNAVAILABLE:
+                #                 print(f"Error: Unavailable leader {self.leaderId}")
                 if (
                     self.role != "Leader"
                     and time.time() - self.timeoutReset > self.electionTimeout
