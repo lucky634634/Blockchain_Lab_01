@@ -49,9 +49,6 @@ class Node:
         self.process.stderr.close()
 
     def Stop(self):
-        # result = self.process.terminate()
-        # if result:
-        #     print("Node " + str(self.nodeId) + " stopped")
         self.isRunning = False
 
         try:
