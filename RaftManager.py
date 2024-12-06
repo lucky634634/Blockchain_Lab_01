@@ -206,13 +206,6 @@ class RaftManager(RaftManager_pb2_grpc.RaftManagerServicer):
                             print(f"Error: Unknown")
                     dpg.set_value("command_output", f"Output: {output}")
 
-    # def Loop(self):
-    #     try:
-    #         while dpg.is_dearpygui_running():
-    #             dpg.render_dearpygui_frame()
-    #     except KeyboardInterrupt:
-    #         pass
-
     def Run(self):
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         RaftManager_pb2_grpc.add_RaftManagerServicer_to_server(self, server)
