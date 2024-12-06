@@ -13,6 +13,12 @@
 * 21127658  -   Trần Hà Minh Nhật
 
 ## BUILD PROTO
+
+```
+python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. Raft.proto
+python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. RaftManager.proto
+```
+
 * windows
 
 ```
