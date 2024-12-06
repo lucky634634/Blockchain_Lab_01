@@ -4,7 +4,7 @@
 
 * 21127077  -   Huỳnh Đăng Khoa
 
-* 21127311  -   Trần Quốc Tuấn
+* 21127119 -   Trần Quốc Tuấn
 
 * 21127409  -   Nguyễn Minh Quốc
 
